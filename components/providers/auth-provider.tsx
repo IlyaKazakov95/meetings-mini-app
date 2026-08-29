@@ -23,15 +23,32 @@ export function useAuth(): AuthContextValue {
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AppUser | null>(null);
+  const [canRequest, setCanRequest] = useState(false);
   const [demoUsers, setDemoUsers] = useState<AppUser[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [requesting, setRequesting] = useState(false);
   const isDev = process.env.NODE_ENV === "development";
   const hasTelegram = Boolean(typeof window !== "undefined" && window.Telegram?.WebApp?.initData);
 
   async function loadMe() {
-    const data = await api<{ user: AppUser }>("/api/auth/me");
+    const data = await api<{ user: AppUser | null; canRequest?: boolean }>("/api/auth/me");
     setUser(data.user);
+    setCanRequest(Boolean(data.canRequest));
+  }
+
+  async function sendRequest() {
+    setRequesting(true);
+    try {
+      const data = await api<{ user: AppUser }>("/api/access/request", { method: "POST" });
+      setUser(data.user);
+      setCanRequest(false);
+      setError(null);
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Request failed");
+    } finally {
+      setRequesting(false);
+    }
   }
 
   useEffect(() => {
@@ -66,13 +83,62 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [isDev]);
 
-  const value = useMemo(() => (user ? { user, refresh: loadMe } : null), [user]);
+  const value = useMemo(() => (user && user.status === "active" ? { user, refresh: loadMe } : null), [user]);
 
   if (loading) {
     return <LoadingState label="Opening Meetings" />;
   }
 
+  if (user?.status === "pending") {
+    return (
+      <div className="mx-auto max-w-md px-4 py-10">
+        <EmptyState
+          title="Request sent"
+          text="An admin will approve your access. Close the app and open it again after you are accepted."
+        />
+      </div>
+    );
+  }
+
+  if (user?.status === "rejected") {
+    return (
+      <div className="mx-auto max-w-md space-y-4 px-4 py-10">
+        <EmptyState
+          title="Access declined"
+          text="An admin declined your request. You can send it again."
+        />
+        <button
+          className="h-12 w-full rounded-2xl bg-accent font-semibold text-accent-fg disabled:opacity-40"
+          disabled={requesting}
+          onClick={() => void sendRequest()}
+        >
+          {requesting ? "Sending…" : "Request access again"}
+        </button>
+        {error ? <p className="text-center text-sm text-danger">{error}</p> : null}
+      </div>
+    );
+  }
+
   if (!user) {
+    if (canRequest) {
+      return (
+        <div className="mx-auto max-w-md space-y-4 px-4 py-10">
+          <EmptyState
+            title="Access required"
+            text="This Mini App is private. Send a request and wait for an admin to approve you."
+          />
+          <button
+            className="h-12 w-full rounded-2xl bg-accent font-semibold text-accent-fg disabled:opacity-40"
+            disabled={requesting}
+            onClick={() => void sendRequest()}
+          >
+            {requesting ? "Sending…" : "Request access"}
+          </button>
+          {error ? <p className="text-center text-sm text-danger">{error}</p> : null}
+        </div>
+      );
+    }
+
     if (isDev) {
       return (
         <div className="mx-auto max-w-md px-4 py-8">

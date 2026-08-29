@@ -21,6 +21,7 @@ type DbUser = {
   display_name: string | null;
   email: string | null;
   role: AppUser["role"];
+  status?: AppUser["status"] | null;
   created_at: string;
   updated_at: string;
 };
@@ -50,6 +51,7 @@ export function mapUser(row: DbUser): AppUser {
     displayName: row.display_name,
     email: row.email,
     role: row.role,
+    status: row.status === "pending" || row.status === "rejected" ? row.status : "active",
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

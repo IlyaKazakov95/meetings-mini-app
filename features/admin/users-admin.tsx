@@ -1,14 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api/client";
+import { useAuth } from "@/components/providers/auth-provider";
 import { displayName } from "@/lib/utils";
-import { ErrorState, LoadingState } from "@/components/ui/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/ui/states";
 import type { AppUser, UserRole } from "@/types/domain";
 
 export function UsersAdmin() {
-  const [users, setUsers] = useState<AppUser[]>([]);
+  const { user: currentUser } = useAuth();
+  const [users, setUsers] = useState<AppUser[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   async function reload() {
     const data = await api<{ users: AppUser[] }>("/api/users");
@@ -19,36 +22,155 @@ export function UsersAdmin() {
     reload().catch((loadError: Error) => setError(loadError.message));
   }, []);
 
+  const pending = useMemo(() => (users ?? []).filter((item) => item.status === "pending"), [users]);
+  const members = useMemo(() => (users ?? []).filter((item) => item.status !== "pending"), [users]);
+
   if (error) return <ErrorState message={error} />;
-  if (users.length === 0) return <LoadingState />;
+  if (!users) return <LoadingState />;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <h1 className="text-2xl font-semibold">Users</h1>
-      <div className="overflow-hidden rounded-3xl bg-card">
-        {users.map((user) => (
-          <div key={user.id} className="flex items-center justify-between gap-3 border-b border-line px-4 py-3 last:border-0">
-            <div>
-              <p className="font-medium">{displayName(user)}</p>
-              <p className="text-sm text-muted">{user.telegramUsername ? `@${user.telegramUsername}` : user.telegramId}</p>
+
+      <section className="space-y-3">
+        <h2 className="text-xs font-semibold tracking-wide text-muted">ACCESS REQUESTS</h2>
+        {pending.length === 0 ? <EmptyState title="No requests" text="New people will appear here." /> : null}
+        {pending.map((user) => (
+          <div key={user.id} className="rounded-3xl bg-card p-4">
+            <p className="font-medium">{displayName(user)}</p>
+            <p className="text-sm text-muted">{user.telegramUsername ? `@${user.telegramUsername}` : user.telegramId}</p>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <button
+                className="h-11 rounded-2xl bg-accent font-medium text-accent-fg disabled:opacity-40"
+                disabled={busyId === user.id}
+                onClick={async () => {
+                  setBusyId(user.id);
+                  try {
+                    await api(`/api/users/${user.id}/access`, {
+                      method: "POST",
+                      body: JSON.stringify({ action: "approve" }),
+                    });
+                    await reload();
+                  } catch (actionError) {
+                    setError(actionError instanceof Error ? actionError.message : "Failed");
+                  } finally {
+                    setBusyId(null);
+                  }
+                }}
+              >
+                Approve
+              </button>
+              <button
+                className="h-11 rounded-2xl bg-bg font-medium text-danger disabled:opacity-40"
+                disabled={busyId === user.id}
+                onClick={async () => {
+                  setBusyId(user.id);
+                  try {
+                    await api(`/api/users/${user.id}/access`, {
+                      method: "POST",
+                      body: JSON.stringify({ action: "reject" }),
+                    });
+                    await reload();
+                  } catch (actionError) {
+                    setError(actionError instanceof Error ? actionError.message : "Failed");
+                  } finally {
+                    setBusyId(null);
+                  }
+                }}
+              >
+                Reject
+              </button>
             </div>
-            <select
-              className="w-28"
-              value={user.role}
-              onChange={async (event) => {
-                await api(`/api/users/${user.id}`, {
-                  method: "PATCH",
-                  body: JSON.stringify({ role: event.target.value as UserRole }),
-                });
-                await reload();
-              }}
-            >
-              <option value="user">user</option>
-              <option value="admin">admin</option>
-            </select>
           </div>
         ))}
-      </div>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-xs font-semibold tracking-wide text-muted">MEMBERS</h2>
+        {members.length === 0 ? <EmptyState title="No members" /> : null}
+        <div className="overflow-hidden rounded-3xl bg-card">
+          {members.map((user) => (
+            <div key={user.id} className="flex items-center justify-between gap-3 border-b border-line px-4 py-3 last:border-0">
+              <div className="min-w-0 flex-1">
+                <p className="font-medium">{displayName(user)}</p>
+                <p className="text-sm text-muted">
+                  {user.telegramUsername ? `@${user.telegramUsername}` : user.telegramId}
+                  {user.status === "rejected" ? " · rejected" : ""}
+                </p>
+              </div>
+              {user.status === "active" ? (
+                <select
+                  className="w-24"
+                  value={user.role}
+                  disabled={busyId === user.id}
+                  onChange={async (event) => {
+                    setBusyId(user.id);
+                    try {
+                      await api(`/api/users/${user.id}`, {
+                        method: "PATCH",
+                        body: JSON.stringify({ role: event.target.value as UserRole }),
+                      });
+                      await reload();
+                    } catch (updateError) {
+                      setError(updateError instanceof Error ? updateError.message : "Update failed");
+                    } finally {
+                      setBusyId(null);
+                    }
+                  }}
+                >
+                  <option value="user">user</option>
+                  <option value="admin">admin</option>
+                </select>
+              ) : (
+                <button
+                  className="text-sm text-accent"
+                  disabled={busyId === user.id}
+                  onClick={async () => {
+                    setBusyId(user.id);
+                    try {
+                      await api(`/api/users/${user.id}/access`, {
+                        method: "POST",
+                        body: JSON.stringify({ action: "approve" }),
+                      });
+                      await reload();
+                    } catch (actionError) {
+                      setError(actionError instanceof Error ? actionError.message : "Failed");
+                    } finally {
+                      setBusyId(null);
+                    }
+                  }}
+                >
+                  Approve
+                </button>
+              )}
+              {user.id !== currentUser.id ? (
+                <button
+                  className="text-sm text-danger disabled:opacity-40"
+                  disabled={busyId === user.id}
+                  onClick={async () => {
+                    if (!confirm(`Delete ${displayName(user)} from the app? This cannot be undone.`)) {
+                      return;
+                    }
+                    setBusyId(user.id);
+                    try {
+                      await api(`/api/users/${user.id}`, { method: "DELETE" });
+                      await reload();
+                    } catch (deleteError) {
+                      setError(deleteError instanceof Error ? deleteError.message : "Delete failed");
+                    } finally {
+                      setBusyId(null);
+                    }
+                  }}
+                >
+                  Delete
+                </button>
+              ) : (
+                <span className="w-12 text-right text-xs text-muted">you</span>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }

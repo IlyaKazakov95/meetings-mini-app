@@ -36,7 +36,7 @@ npm install
 Copy environment variables:
 
 ```bash
-copy .env.example .env.local
+cp .env.example .env.local
 ```
 
 On macOS / Linux use `cp .env.example .env.local`.
@@ -62,6 +62,7 @@ Do not commit real secrets. `.env*` is gitignored except `.env.example`.
 3. Open **SQL Editor** and run the migrations in order:
    - `database/migrations/001_init.sql`
    - `database/migrations/002_rls.sql`
+   - `database/migrations/003_user_status.sql`
 
 `002_rls.sql` enables Row Level Security and does not add anon policies. The Next.js API uses the service role key and checks Telegram `initData` plus user role on the server.
 
@@ -111,7 +112,9 @@ Notifications are not fully implemented in this MVP. `services/notifications.ts`
 
 The client sends `initData` on every API request. The server validates the HMAC signature against `TELEGRAM_BOT_TOKEN`. Username is never used as the primary identifier. `telegram_id` is.
 
-The first real Telegram user who opens the app becomes `admin` if the users table is empty. After that, change roles in **Admin → Users**.
+The first real Telegram user becomes `admin` if there is no active admin yet. Everyone after that must tap **Request access**. An admin approves or rejects the request in **Admin → Users**. Pending users cannot see meetings, agenda or join links.
+
+After pulling this change, run `database/migrations/003_user_status.sql` in the Supabase SQL editor. Existing users stay `active`.
 
 ## Local development
 
@@ -205,7 +208,7 @@ The app uses the Node.js runtime for XLSX parsing and Telegram validation.
 
 ## Production checklist
 
-- [ ] Migrations applied in Supabase
+- [ ] Migrations applied in Supabase (`001`, `002`, `003`)
 - [ ] `SUPABASE_SERVICE_ROLE_KEY` set only on the server
 - [ ] `TELEGRAM_BOT_TOKEN` set only on the server
 - [ ] Mini App URL is HTTPS

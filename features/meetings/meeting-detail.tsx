@@ -161,6 +161,7 @@ export function MeetingDetailScreen({ meetingId }: { meetingId: string }) {
               >
                 <option value="">+ Add participant</option>
                 {users
+                  .filter((item) => item.status === "active")
                   .filter((item) => !meeting.participants.some((participant) => participant.userId === item.id))
                   .map((item) => (
                     <option key={item.id} value={item.id}>

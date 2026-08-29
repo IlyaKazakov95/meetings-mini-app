@@ -28,11 +28,11 @@ const today = new Date();
 const iso = (date: Date) => formatISO(date, { representation: "date" });
 
 const users = [
-  { telegram_id: 1001, telegram_username: "anna_admin", first_name: "Anna", last_name: "Admin", display_name: "Anna Admin", role: "admin" },
-  { telegram_id: 1002, telegram_username: "dmitry", first_name: "Dmitry", last_name: "Ivanov", display_name: "Dmitry Ivanov", role: "user" },
-  { telegram_id: 1003, telegram_username: "maria", first_name: "Maria", last_name: "Petrova", display_name: "Maria Petrova", role: "user" },
-  { telegram_id: 1004, telegram_username: "ivan", first_name: "Ivan", last_name: "Sokolov", display_name: "Ivan Sokolov", role: "user" },
-  { telegram_id: 1005, telegram_username: "olga", first_name: "Olga", last_name: "Kuznetsova", display_name: "Olga Kuznetsova", role: "user" },
+  { telegram_id: 1001, telegram_username: "anna_admin", first_name: "Anna", last_name: "Admin", display_name: "Anna Admin", role: "admin", status: "active" },
+  { telegram_id: 1002, telegram_username: "dmitry", first_name: "Dmitry", last_name: "Ivanov", display_name: "Dmitry Ivanov", role: "user", status: "active" },
+  { telegram_id: 1003, telegram_username: "maria", first_name: "Maria", last_name: "Petrova", display_name: "Maria Petrova", role: "user", status: "active" },
+  { telegram_id: 1004, telegram_username: "ivan", first_name: "Ivan", last_name: "Sokolov", display_name: "Ivan Sokolov", role: "user", status: "active" },
+  { telegram_id: 1005, telegram_username: "olga", first_name: "Olga", last_name: "Kuznetsova", display_name: "Olga Kuznetsova", role: "user", status: "active" },
 ];
 
 const meetingDefs = [

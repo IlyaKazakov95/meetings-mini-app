@@ -24,7 +24,7 @@ export async function POST(
     }
 
     if (body.addAll) {
-      const users = await listUsers();
+      const users = await listUsers("active");
       await addParticipants(id, users.map((user) => user.id));
       return Response.json({ ok: true });
     }

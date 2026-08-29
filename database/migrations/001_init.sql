@@ -15,6 +15,7 @@ create table if not exists public.users (
   display_name text,
   email text,
   role text not null default 'user' check (role in ('user', 'admin')),
+  status text not null default 'active' check (status in ('pending', 'active', 'rejected')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

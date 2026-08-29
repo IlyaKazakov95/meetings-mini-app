@@ -42,6 +42,10 @@ interface TelegramWebApp {
   expand: () => void;
   close: () => void;
   openLink: (url: string, options?: { try_instant_view?: boolean }) => void;
+  downloadFile?: (
+    params: { url: string; file_name: string },
+    callback?: (accepted: boolean) => void,
+  ) => void;
   HapticFeedback: {
     impactOccurred: (style: "light" | "medium" | "heavy" | "rigid" | "soft") => void;
     notificationOccurred: (type: "error" | "success" | "warning") => void;

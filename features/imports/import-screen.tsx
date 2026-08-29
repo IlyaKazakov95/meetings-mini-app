@@ -24,6 +24,45 @@ export function ImportScreen() {
       .catch(() => undefined);
   }, [result]);
 
+  async function downloadTemplate() {
+    const url = `${window.location.origin}/api/imports/template`;
+    const webApp = window.Telegram?.WebApp;
+
+    const downloadFile = webApp?.downloadFile;
+    if (downloadFile) {
+      await new Promise<void>((resolve, reject) => {
+        downloadFile(
+          { url, file_name: "meeting_schedule_template.xlsx" },
+          (accepted) => {
+            if (accepted) resolve();
+            else reject(new Error("Download cancelled"));
+          },
+        );
+      });
+      return;
+    }
+
+    if (webApp?.openLink) {
+      webApp.openLink(url);
+      return;
+    }
+
+    const response = await fetch(url, {
+      headers: { "x-telegram-init-data": getInitData() },
+      credentials: "include",
+    });
+    if (!response.ok) {
+      throw new Error("Could not download template");
+    }
+    const blob = await response.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = objectUrl;
+    link.download = "meeting_schedule_template.xlsx";
+    link.click();
+    URL.revokeObjectURL(objectUrl);
+  }
+
   async function upload(file: File) {
     setBusy(true);
     setError(null);
@@ -89,29 +128,21 @@ export function ImportScreen() {
         <p className="mt-1 text-sm text-muted">Max 5 MB. Preview before confirm.</p>
       </label>
 
-      <a
-        href="/api/imports/template"
-        className="block rounded-2xl bg-card py-3 text-center text-sm"
-        onClick={async (event) => {
-          event.preventDefault();
-          const response = await fetch("/api/imports/template", {
-            headers: { "x-telegram-init-data": getInitData() },
-          });
-          if (!response.ok) {
+      <button
+        type="button"
+        className="block w-full rounded-2xl bg-card py-3 text-center text-sm"
+        onClick={() => {
+          void downloadTemplate().catch((downloadError: Error) => {
+            if (downloadError.message === "Download cancelled") return;
             setError("Could not download template");
-            return;
-          }
-          const blob = await response.blob();
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement("a");
-          link.href = url;
-          link.download = "meeting_schedule_template.xlsx";
-          link.click();
-          URL.revokeObjectURL(url);
+          });
         }}
       >
         Download Template
-      </a>
+      </button>
+      <p className="text-center text-xs text-muted">
+        On iPhone the file opens in Safari. Tap Share → Save to Files.
+      </p>
 
       {error ? <ErrorState message={error} /> : null}
 

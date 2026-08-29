@@ -1,0 +1,69 @@
+@import "tailwindcss";
+
+:root {
+  --bg: var(--tg-theme-bg-color, #0e1621);
+  --fg: var(--tg-theme-text-color, #f4f7fb);
+  --muted: var(--tg-theme-hint-color, #8b9bb4);
+  --card: var(--tg-theme-secondary-bg-color, #17212b);
+  --accent: var(--tg-theme-button-color, #2ea6ff);
+  --accent-fg: var(--tg-theme-button-text-color, #ffffff);
+  --link: var(--tg-theme-link-color, #6ab2f2);
+  --danger: var(--tg-theme-destructive-text-color, #ff5c5c);
+  --line: color-mix(in srgb, var(--fg) 10%, transparent);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-card: var(--card);
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-link: var(--link);
+  --color-danger: var(--danger);
+  --color-line: var(--line);
+  --font-sans: "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+}
+
+html,
+body {
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--fg);
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+textarea,
+input,
+select {
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px 14px;
+  width: 100%;
+}
+
+textarea:focus,
+input:focus,
+select:focus {
+  outline: 2px solid color-mix(in srgb, var(--accent) 50%, transparent);
+  outline-offset: 1px;
+}

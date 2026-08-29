@@ -35,7 +35,13 @@ export async function POST(
       return Response.json({ error: "Topic is required" }, { status: 400 });
     }
 
-    const item = await createAgendaItem(id, body);
+    const item = await createAgendaItem(id, {
+      topic: body.topic,
+      startTime: body.startTime,
+      endTime: body.endTime,
+      responsibleText: body.responsibleText,
+      outcomeExpected: body.outcomeExpected,
+    });
     return Response.json({ item });
   } catch (error) {
     return jsonError(error);

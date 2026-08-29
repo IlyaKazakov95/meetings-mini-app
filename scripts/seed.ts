@@ -82,7 +82,7 @@ async function upsertMeeting(input: (typeof meetingDefs)[number], index: number)
 }
 
 async function main() {
-  const userIds = [];
+  const userIds: string[] = [];
   for (const user of users) {
     userIds.push(await upsertUser(user));
   }

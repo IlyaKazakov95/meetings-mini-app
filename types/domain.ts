@@ -1,3 +1,5 @@
+import type { ImportErrorLog, ImportPreview } from "@/types/import";
+
 export const USER_ROLES = ["user", "admin"] as const;
 export type UserRole = (typeof USER_ROLES)[number];
 
@@ -120,17 +122,14 @@ export interface ImportRecord {
   previewData: ImportPreview | null;
 }
 
+export type { ImportErrorLog, ImportPreview };
+
 export interface ImportIssue {
   level: "error" | "warning";
   code: string;
   message: string;
   rowNumber?: number;
   meetingKey?: string;
-}
-
-export interface ImportErrorLog {
-  errors: ImportIssue[];
-  warnings: ImportIssue[];
 }
 
 export interface HomeCounters {

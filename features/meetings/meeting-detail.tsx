@@ -53,10 +53,11 @@ export function MeetingDetailScreen({ meetingId }: { meetingId: string }) {
   }
 
   function openJoin() {
-    if (!meeting.meetingLink) return;
-    window.Telegram?.WebApp?.openLink(meeting.meetingLink);
+    const link = meeting?.meetingLink;
+    if (!link) return;
+    window.Telegram?.WebApp?.openLink(link);
     if (!window.Telegram?.WebApp) {
-      window.open(meeting.meetingLink, "_blank", "noopener,noreferrer");
+      window.open(link, "_blank", "noopener,noreferrer");
     }
   }
 

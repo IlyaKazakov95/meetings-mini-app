@@ -26,19 +26,25 @@ function compareAgenda(a: ValidatedExcelRow, b: ValidatedExcelRow): number {
   return a.sourceRowNumber - b.sourceRowNumber;
 }
 
-function minTime(times: Array<string | null>): string | null {
-  const values = times
-    .map((time) => (time ? { time, minutes: minutesFromTime(time) } : null))
-    .filter((item): item is { time: string; minutes: number } => item?.minutes !== null && item.minutes !== undefined);
+function timedValues(times: Array<string | null>): Array<{ time: string; minutes: number }> {
+  const values: Array<{ time: string; minutes: number }> = [];
+  for (const time of times) {
+    if (!time) continue;
+    const minutes = minutesFromTime(time);
+    if (minutes === null) continue;
+    values.push({ time, minutes });
+  }
+  return values;
+}
 
+function minTime(times: Array<string | null>): string | null {
+  const values = timedValues(times);
   if (values.length === 0) return null;
   return values.reduce((best, item) => (item.minutes < best.minutes ? item : best)).time;
 }
 
 function maxTime(times: Array<string | null>): string | null {
-  const values = times
-    .map((time) => (time ? { time, minutes: minutesFromTime(time) } : null))
-    .filter((item): item is { time: string; minutes: number } => item?.minutes !== null && item.minutes !== undefined);
+  const values = timedValues(times);
 
   if (values.length === 0) return null;
   return values.reduce((best, item) => (item.minutes > best.minutes ? item : best)).time;

@@ -9,7 +9,7 @@ const HEADERS = [
   "Who",
   "Outcome_expected",
   "Meeting_Link",
-] as const;
+];
 
 const EXAMPLE_ROWS = [
   [

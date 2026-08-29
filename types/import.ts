@@ -35,6 +35,11 @@ export interface ImportRowIssue {
   message: string;
 }
 
+export interface ImportErrorLog {
+  errors: Array<ImportRowIssue & { rowNumber?: number; meetingKey?: string }>;
+  warnings: Array<ImportRowIssue & { rowNumber?: number; meetingKey?: string }>;
+}
+
 export interface PreviewAgendaItem {
   topic: string;
   startTime: string | null;

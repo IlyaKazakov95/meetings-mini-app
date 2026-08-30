@@ -19,18 +19,14 @@ export function MeetingDetailScreen({ meetingId }: { meetingId: string }) {
   const [savingAttendance, setSavingAttendance] = useState(false);
 
   async function reload() {
-    const data = await api<{ meeting: MeetingDetail }>(`/api/meetings/${meetingId}`);
+    const data = await api<{ meeting: MeetingDetail; users?: AppUser[] }>(`/api/meetings/${meetingId}`);
     setMeeting(data.meeting);
+    if (data.users) setUsers(data.users);
   }
 
   useEffect(() => {
     reload().catch((loadError: Error) => setError(loadError.message));
-    if (user.role === "admin") {
-      api<{ users: AppUser[] }>("/api/users")
-        .then((data) => setUsers(data.users))
-        .catch(() => undefined);
-    }
-  }, [meetingId, user.role]);
+  }, [meetingId]);
 
   if (error) return <ErrorState message={error} />;
   if (!meeting) return <LoadingState />;

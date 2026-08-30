@@ -1,6 +1,7 @@
+import { formatISO } from "date-fns";
 import { z } from "zod";
 import { jsonError, requireAdmin, requireUser } from "@/lib/auth/session";
-import { createMeeting, listMeetingsForWeek } from "@/services/meetings";
+import { createMeeting, getHomeCounters, listMeetingsForWeek } from "@/services/meetings";
 
 const createSchema = z.object({
   title: z.string().min(1).max(200),
@@ -18,8 +19,12 @@ export async function GET(request: Request) {
     if (!weekStart) {
       return Response.json({ error: "weekStart is required" }, { status: 400 });
     }
-    const meetings = await listMeetingsForWeek(weekStart, user.id);
-    return Response.json({ meetings });
+    const today = formatISO(new Date(), { representation: "date" });
+    const [meetings, counters] = await Promise.all([
+      listMeetingsForWeek(weekStart, user.id),
+      getHomeCounters(user.id, today),
+    ]);
+    return Response.json({ meetings, counters });
   } catch (error) {
     return jsonError(error);
   }

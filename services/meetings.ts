@@ -95,19 +95,13 @@ export async function getHomeCounters(userId: string, today: string): Promise<Ho
       .in("status", ["open", "in_progress"]),
   ]);
 
-  const { count: todayMeetingsForResponse } = await supabase
-    .from("meetings")
-    .select("id", { count: "exact", head: true })
-    .eq("meeting_date", today)
-    .neq("status", "cancelled");
-
   const responded = new Set(
     (myAttendance ?? [])
       .filter((item) => item.attendance_status)
       .map((item) => item.meeting_id),
   );
 
-  const needResponse = Math.max((todayMeetingsForResponse ?? 0) - responded.size, 0);
+  const needResponse = Math.max((meetingsToday ?? 0) - responded.size, 0);
   const openActions = myActions?.length ?? 0;
   const overdue = (myActions ?? []).filter((item) => item.due_date && item.due_date < today).length;
 

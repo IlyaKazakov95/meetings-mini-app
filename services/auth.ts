@@ -48,24 +48,26 @@ export async function createUser(
   return mapUser(data);
 }
 
-export async function refreshProfile(userId: string, input: TelegramProfile): Promise<AppUser> {
-  const supabase = getSupabaseAdmin();
-  const { data: existing, error: existingError } = await supabase
-    .from("users")
-    .select("*")
-    .eq("id", userId)
-    .single();
-  if (existingError) throw existingError;
+export async function refreshProfile(existing: AppUser, input: TelegramProfile): Promise<AppUser> {
+  const nextDisplayName = existing.displayName || displayNameFrom(input);
+  const unchanged =
+    existing.telegramUsername === input.telegramUsername &&
+    existing.firstName === input.firstName &&
+    existing.lastName === input.lastName &&
+    existing.displayName === nextDisplayName;
 
+  if (unchanged) return existing;
+
+  const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
     .from("users")
     .update({
       telegram_username: input.telegramUsername,
       first_name: input.firstName,
       last_name: input.lastName,
-      display_name: existing.display_name || displayNameFrom(input),
+      display_name: nextDisplayName,
     })
-    .eq("id", userId)
+    .eq("id", existing.id)
     .select("*")
     .single();
 
@@ -73,10 +75,13 @@ export async function refreshProfile(userId: string, input: TelegramProfile): Pr
   return mapUser(data);
 }
 
-export async function identifyTelegramUser(input: TelegramProfile): Promise<AppUser | null> {
+export async function identifyTelegramUser(
+  input: TelegramProfile,
+  options: { touchProfile?: boolean } = {},
+): Promise<AppUser | null> {
   const existing = await getUserByTelegramId(input.telegramId);
   if (existing) {
-    return refreshProfile(existing.id, input);
+    return options.touchProfile ? refreshProfile(existing, input) : existing;
   }
 
   if ((await countActiveAdmins()) === 0) {
@@ -90,7 +95,7 @@ export async function requestAccess(input: TelegramProfile): Promise<AppUser> {
   const existing = await getUserByTelegramId(input.telegramId);
   if (existing) {
     if (existing.status === "active") {
-      return refreshProfile(existing.id, input);
+      return refreshProfile(existing, input);
     }
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase

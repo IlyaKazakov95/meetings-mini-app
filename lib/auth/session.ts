@@ -57,9 +57,9 @@ export async function getTelegramProfile(): Promise<TelegramProfile> {
   throw new AuthError("No Telegram context");
 }
 
-export async function getSessionUser(): Promise<AppUser | null> {
+export async function getSessionUser(options: { touchProfile?: boolean } = {}): Promise<AppUser | null> {
   const profile = await getTelegramProfile();
-  return identifyTelegramUser(profile);
+  return identifyTelegramUser(profile, options);
 }
 
 export async function getCurrentUser(): Promise<AppUser> {

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { jsonError, requireAdmin, requireUser } from "@/lib/auth/session";
+import { listUsers } from "@/services/auth";
 import { deleteMeeting, getMeetingDetail, updateMeeting } from "@/services/meetings";
 
 const updateSchema = z.object({
@@ -22,7 +23,8 @@ export async function GET(
     if (!meeting) {
       return Response.json({ error: "Meeting not found" }, { status: 404 });
     }
-    return Response.json({ meeting });
+    const users = user.role === "admin" ? await listUsers("active") : [];
+    return Response.json({ meeting, users });
   } catch (error) {
     return jsonError(error);
   }

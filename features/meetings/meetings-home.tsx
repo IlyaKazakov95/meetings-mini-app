@@ -21,14 +21,11 @@ export function MeetingsHome() {
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    Promise.all([
-      api<{ meetings: MeetingListItem[] }>(`/api/meetings?weekStart=${weekStart}`),
-      api<{ counters: HomeCounters }>("/api/home"),
-    ])
-      .then(([meetingData, homeData]) => {
+    api<{ meetings: MeetingListItem[]; counters: HomeCounters }>(`/api/meetings?weekStart=${weekStart}`)
+      .then((data) => {
         if (cancelled) return;
-        setMeetings(meetingData.meetings);
-        setCounters(homeData.counters);
+        setMeetings(data.meetings);
+        setCounters(data.counters);
         setError(null);
       })
       .catch((loadError: Error) => {

@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { jsonError, requireUser } from "@/lib/auth/session";
-import { updateAction } from "@/services/actions";
+import { jsonError, requireAdmin, requireUser } from "@/lib/auth/session";
+import { deleteAction, updateAction } from "@/services/actions";
 
 const schema = z.object({
   title: z.string().min(1).max(300).optional(),
@@ -20,6 +20,20 @@ export async function PATCH(
     const body = schema.parse(await request.json());
     const action = await updateAction(id, body, user.id, user.role);
     return Response.json({ action });
+  } catch (error) {
+    return jsonError(error);
+  }
+}
+
+export async function DELETE(
+  _request: Request,
+  context: { params: Promise<{ id: string }> },
+) {
+  try {
+    await requireAdmin();
+    const { id } = await context.params;
+    await deleteAction(id);
+    return Response.json({ ok: true });
   } catch (error) {
     return jsonError(error);
   }

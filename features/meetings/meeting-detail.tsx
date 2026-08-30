@@ -511,35 +511,105 @@ function ActionsBlock({
   const [title, setTitle] = useState("");
   const [ownerId, setOwnerId] = useState("");
   const [dueDate, setDueDate] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editOwnerId, setEditOwnerId] = useState("");
+  const [editDueDate, setEditDueDate] = useState("");
+  const activeUsers = users.filter((item) => item.status === "active");
 
   return (
     <section className="space-y-3">
       <h2 className="text-xs font-semibold tracking-wide text-muted">ACTIONS</h2>
       {meeting.actionItems.map((item) => (
-        <article key={item.id} className="rounded-3xl bg-card p-4">
-          <h3 className="font-semibold">{item.title}</h3>
-          <p className="mt-1 text-sm text-muted">
-            {item.ownerName || "Unassigned"}
-            {item.dueDate ? ` · ${item.dueDate}` : ""}
-          </p>
-          {isAdmin || item.ownerId ? (
-            <select
-              className="mt-3"
-              value={item.status}
-              onChange={async (event) => {
-                await api(`/api/actions/${item.id}`, {
-                  method: "PATCH",
-                  body: JSON.stringify({ status: event.target.value as ActionStatus }),
-                });
-                await onChange();
-              }}
-            >
-              <option value="open">Open</option>
-              <option value="in_progress">In progress</option>
-              <option value="done">Done</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
-          ) : null}
+        <article key={item.id} className="space-y-2 rounded-3xl bg-card p-4">
+          {isAdmin && editingId === item.id ? (
+            <>
+              <input value={editTitle} onChange={(event) => setEditTitle(event.target.value)} />
+              <select value={editOwnerId} onChange={(event) => setEditOwnerId(event.target.value)}>
+                <option value="">Unassigned</option>
+                {activeUsers.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {displayName(user)}
+                  </option>
+                ))}
+              </select>
+              <input type="date" value={editDueDate} onChange={(event) => setEditDueDate(event.target.value)} />
+              <div className="flex gap-2">
+                <button
+                  className="h-11 flex-1 rounded-2xl bg-accent font-medium text-accent-fg"
+                  onClick={async () => {
+                    if (!editTitle.trim()) return;
+                    await api(`/api/actions/${item.id}`, {
+                      method: "PATCH",
+                      body: JSON.stringify({
+                        title: editTitle,
+                        ownerId: editOwnerId || null,
+                        dueDate: editDueDate || null,
+                      }),
+                    });
+                    setEditingId(null);
+                    await onChange();
+                  }}
+                >
+                  Save
+                </button>
+                <button className="h-11 rounded-2xl bg-bg px-4" onClick={() => setEditingId(null)}>
+                  Cancel
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <h3 className="font-semibold">{item.title}</h3>
+              <p className="mt-1 text-sm text-muted">
+                {item.ownerName || "Unassigned"}
+                {item.dueDate ? ` · ${item.dueDate}` : ""}
+              </p>
+              {isAdmin || item.ownerId ? (
+                <select
+                  className="mt-3"
+                  value={item.status}
+                  onChange={async (event) => {
+                    await api(`/api/actions/${item.id}`, {
+                      method: "PATCH",
+                      body: JSON.stringify({ status: event.target.value as ActionStatus }),
+                    });
+                    await onChange();
+                  }}
+                >
+                  <option value="open">Open</option>
+                  <option value="in_progress">In progress</option>
+                  <option value="done">Done</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              ) : null}
+              {isAdmin ? (
+                <div className="flex gap-2 pt-1">
+                  <button
+                    className="h-10 flex-1 rounded-2xl bg-bg text-sm"
+                    onClick={() => {
+                      setEditingId(item.id);
+                      setEditTitle(item.title);
+                      setEditOwnerId(item.ownerId ?? "");
+                      setEditDueDate(item.dueDate ?? "");
+                    }}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    className="h-10 rounded-2xl bg-bg px-4 text-sm text-danger"
+                    onClick={async () => {
+                      if (!confirm("Delete this action?")) return;
+                      await api(`/api/actions/${item.id}`, { method: "DELETE" });
+                      await onChange();
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
+              ) : null}
+            </>
+          )}
         </article>
       ))}
 
@@ -566,7 +636,7 @@ function ActionsBlock({
           <input placeholder="Action" value={title} onChange={(event) => setTitle(event.target.value)} />
           <select value={ownerId} onChange={(event) => setOwnerId(event.target.value)}>
             <option value="">Select user</option>
-            {users.map((item) => (
+            {activeUsers.map((item) => (
               <option key={item.id} value={item.id}>
                 {displayName(item)}
               </option>

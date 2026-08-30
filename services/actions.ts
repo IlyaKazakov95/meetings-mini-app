@@ -85,6 +85,12 @@ export async function updateAction(
   return mapAction(data);
 }
 
+export async function deleteAction(id: string): Promise<void> {
+  const supabase = getSupabaseAdmin();
+  const { error } = await supabase.from("action_items").delete().eq("id", id);
+  if (error) throw error;
+}
+
 export async function listMyActions(userId: string): Promise<ActionItem[]> {
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase

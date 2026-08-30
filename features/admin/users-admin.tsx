@@ -88,85 +88,86 @@ export function UsersAdmin() {
       <section className="space-y-3">
         <h2 className="text-xs font-semibold tracking-wide text-muted">MEMBERS</h2>
         {members.length === 0 ? <EmptyState title="No members" /> : null}
-        <div className="overflow-hidden rounded-3xl bg-card">
+        <div className="space-y-3">
           {members.map((user) => (
-            <div key={user.id} className="flex items-center justify-between gap-3 border-b border-line px-4 py-3 last:border-0">
-              <div className="min-w-0 flex-1">
-                <p className="font-medium">{displayName(user)}</p>
-                <p className="text-sm text-muted">
+            <div key={user.id} className="space-y-3 rounded-3xl bg-card p-4">
+              <div>
+                <p className="break-words font-medium">{displayName(user)}</p>
+                <p className="break-all text-sm text-muted">
                   {user.telegramUsername ? `@${user.telegramUsername}` : user.telegramId}
                   {user.status === "rejected" ? " · rejected" : ""}
+                  {user.id === currentUser.id ? " · you" : ""}
                 </p>
               </div>
-              {user.status === "active" ? (
-                <select
-                  className="w-24"
-                  value={user.role}
-                  disabled={busyId === user.id}
-                  onChange={async (event) => {
-                    setBusyId(user.id);
-                    try {
-                      await api(`/api/users/${user.id}`, {
-                        method: "PATCH",
-                        body: JSON.stringify({ role: event.target.value as UserRole }),
-                      });
-                      await reload();
-                    } catch (updateError) {
-                      setError(updateError instanceof Error ? updateError.message : "Update failed");
-                    } finally {
-                      setBusyId(null);
-                    }
-                  }}
-                >
-                  <option value="user">user</option>
-                  <option value="admin">admin</option>
-                </select>
-              ) : (
-                <button
-                  className="text-sm text-accent"
-                  disabled={busyId === user.id}
-                  onClick={async () => {
-                    setBusyId(user.id);
-                    try {
-                      await api(`/api/users/${user.id}/access`, {
-                        method: "POST",
-                        body: JSON.stringify({ action: "approve" }),
-                      });
-                      await reload();
-                    } catch (actionError) {
-                      setError(actionError instanceof Error ? actionError.message : "Failed");
-                    } finally {
-                      setBusyId(null);
-                    }
-                  }}
-                >
-                  Approve
-                </button>
-              )}
-              {user.id !== currentUser.id ? (
-                <button
-                  className="text-sm text-danger disabled:opacity-40"
-                  disabled={busyId === user.id}
-                  onClick={async () => {
-                    if (!confirm(`Delete ${displayName(user)} from the app? This cannot be undone.`)) {
-                      return;
-                    }
-                    setBusyId(user.id);
-                    try {
-                      await api(`/api/users/${user.id}`, { method: "DELETE" });
-                      await reload();
-                    } catch (deleteError) {
-                      setError(deleteError instanceof Error ? deleteError.message : "Delete failed");
-                    } finally {
-                      setBusyId(null);
-                    }
-                  }}
-                >
-                  Delete
-                </button>
-              ) : (
-                <span className="w-12 text-right text-xs text-muted">you</span>
-              )}
+              <div className="flex items-center gap-2">
+                {user.status === "active" ? (
+                  <select
+                    className="min-w-0 flex-1"
+                    value={user.role}
+                    disabled={busyId === user.id}
+                    onChange={async (event) => {
+                      setBusyId(user.id);
+                      try {
+                        await api(`/api/users/${user.id}`, {
+                          method: "PATCH",
+                          body: JSON.stringify({ role: event.target.value as UserRole }),
+                        });
+                        await reload();
+                      } catch (updateError) {
+                        setError(updateError instanceof Error ? updateError.message : "Update failed");
+                      } finally {
+                        setBusyId(null);
+                      }
+                    }}
+                  >
+                    <option value="user">user</option>
+                    <option value="admin">admin</option>
+                  </select>
+                ) : (
+                  <button
+                    className="h-11 flex-1 rounded-2xl bg-bg text-sm text-accent"
+                    disabled={busyId === user.id}
+                    onClick={async () => {
+                      setBusyId(user.id);
+                      try {
+                        await api(`/api/users/${user.id}/access`, {
+                          method: "POST",
+                          body: JSON.stringify({ action: "approve" }),
+                        });
+                        await reload();
+                      } catch (actionError) {
+                        setError(actionError instanceof Error ? actionError.message : "Failed");
+                      } finally {
+                        setBusyId(null);
+                      }
+                    }}
+                  >
+                    Approve
+                  </button>
+                )}
+                {user.id !== currentUser.id ? (
+                  <button
+                    className="h-11 shrink-0 rounded-2xl bg-bg px-4 text-sm text-danger disabled:opacity-40"
+                    disabled={busyId === user.id}
+                    onClick={async () => {
+                      if (!confirm(`Delete ${displayName(user)} from the app? This cannot be undone.`)) {
+                        return;
+                      }
+                      setBusyId(user.id);
+                      try {
+                        await api(`/api/users/${user.id}`, { method: "DELETE" });
+                        await reload();
+                      } catch (deleteError) {
+                        setError(deleteError instanceof Error ? deleteError.message : "Delete failed");
+                      } finally {
+                        setBusyId(null);
+                      }
+                    }}
+                  >
+                    Delete
+                  </button>
+                ) : null}
+              </div>
             </div>
           ))}
         </div>
